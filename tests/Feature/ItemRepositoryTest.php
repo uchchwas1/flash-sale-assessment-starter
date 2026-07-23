@@ -43,7 +43,9 @@ class ItemRepositoryTest extends TestCase
         $affected = $this->items->decrementAvailableStock($item->id);
 
         $this->assertSame(1, $affected);
+        // Both stock columns move together.
         $this->assertSame(4, $item->fresh()->available_stock);
+        $this->assertSame(4, $item->fresh()->total_stock);
     }
 
     public function test_decrement_reports_zero_and_does_not_go_negative_when_sold_out(): void
@@ -68,5 +70,6 @@ class ItemRepositoryTest extends TestCase
 
         $this->assertSame(3, $claims, 'exactly the available units are claimable');
         $this->assertSame(0, $item->fresh()->available_stock, 'stock never drops below zero');
+        $this->assertSame(0, $item->fresh()->total_stock, 'total moves down with available');
     }
 }

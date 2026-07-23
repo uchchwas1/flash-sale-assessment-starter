@@ -32,7 +32,9 @@ class PurchaseServiceTest extends TestCase
 
         $this->assertSame($item->id, $order->item_id);
         $this->assertSame('user_1', $order->user_id);
+        // total_stock' and 'available_stock' concept is same requierement collected and confirmed
         $this->assertSame(4, $item->fresh()->available_stock);
+        $this->assertSame(4, $item->fresh()->total_stock);
         $this->assertDatabaseCount('orders', 1);
     }
 

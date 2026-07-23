@@ -20,11 +20,16 @@ final class ItemRepository implements ItemRepositoryInterface
         // The `> 0` guard is the linchpin: it fuses the "is stock available?"
         // check and the decrement into one atomic, row-locked statement, so no
         // two concurrent buyers can both pass the check for the same unit.
-        // `decrement()` returns the affected-row count (1 = claimed, 0 = sold out).
+        // Both stock columns move together (they represent the same current
+        // stock); `decrementEach` returns the affected-row count (1 = claimed,
+        // 0 = sold out).
         return $this->baseQuery()
             ->where('id', $itemId)
             ->where('available_stock', '>', 0)
-            ->decrement('available_stock');
+            ->decrementEach([
+                'available_stock' => 1,
+                'total_stock' => 1,
+            ]);
     }
 
     private function baseQuery(): Builder

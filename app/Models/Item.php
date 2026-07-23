@@ -44,14 +44,6 @@ class Item extends Model
         return $this->hasMany(Order::class);
     }
 
-    /**
-     * Units already sold = original stock minus what remains.
-     */
-    public function sold(): int
-    {
-        return $this->total_stock - $this->available_stock;
-    }
-
     public function isSoldOut(): bool
     {
         return $this->available_stock <= 0;

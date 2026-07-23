@@ -33,6 +33,24 @@ class ItemApiTest extends TestCase
             ]);
     }
 
+    public function test_show_reflects_sales_both_columns_drop_and_sold_counts_orders(): void
+    {
+        $item = Item::factory()->withStock(10)->create();
+        $this->postJson("/items/{$item->id}/buy", ['user_id' => 'user_1'])->assertCreated();
+        $this->postJson("/items/{$item->id}/buy", ['user_id' => 'user_2'])->assertCreated();
+
+        $this->getJson("/items/{$item->id}")
+            ->assertOk()
+            ->assertJson([
+                'data' => [
+                    'total_stock' => 8,       // both columns moved together
+                    'available_stock' => 8,
+                    'sold' => 2,              // sourced from the orders trail
+                    'is_sold_out' => false,
+                ],
+            ]);
+    }
+
     public function test_show_returns_404_envelope_for_missing_item(): void
     {
         $this->getJson('/items/999999')

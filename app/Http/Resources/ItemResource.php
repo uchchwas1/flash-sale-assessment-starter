@@ -23,7 +23,7 @@ class ItemResource extends JsonResource
             'title' => $this->title,
             'total_stock' => $this->total_stock,
             'available_stock' => $this->available_stock,
-            'sold' => $this->sold(),
+            'sold' => (int) ($this->orders_count ?? 0),
             'is_sold_out' => $this->isSoldOut(),
         ];
     }

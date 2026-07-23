@@ -31,6 +31,10 @@ final class ItemController extends Controller
             throw new ItemNotFoundException($id);
         }
 
+        // `sold` is sourced from the orders audit trail (the stock columns move
+        // together, so they can't report how many units have gone out).
+        $item->loadCount('orders');
+
         return ApiResponse::success(new ItemResource($item), 'Item retrieved.');
     }
 
