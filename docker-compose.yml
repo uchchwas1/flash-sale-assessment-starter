@@ -1,0 +1,32 @@
+# Portable environment for reviewers who have Docker.
+# NOTE: On the author's machine the app runs against a host MySQL (MAMP) on
+# port 8889 (root/root). This compose file is the reproducible alternative:
+# bring it up and point .env at DB_PORT=3306 / DB_USERNAME=dev_user / DB_PASSWORD=dev_password.
+services:
+  mysql:
+    image: mysql:8
+    container_name: flash_sale_db
+    command: --default-authentication-plugin=caching_sha2_password
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: flash_sale
+      MYSQL_USER: dev_user
+      MYSQL_PASSWORD: dev_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    container_name: flash_sale_redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  mysql_data:
