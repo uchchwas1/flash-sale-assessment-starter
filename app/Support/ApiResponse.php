@@ -7,11 +7,6 @@ namespace App\Support;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
-/**
- *
- *   success: { "success": true,  "message": "...", "data":   {...} }
- *   error:   { "success": false, "message": "...", "errors": {...} }
- */
 final class ApiResponse
 {
     public static function success(
