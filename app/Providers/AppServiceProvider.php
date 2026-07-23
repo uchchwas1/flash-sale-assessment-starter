@@ -15,7 +15,7 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Repository contract -> implementation bindings, so the service layer
      *
-     * @var array<class-string, class-string>
+     * @var array<class-string,class-string>
      */
     public array $bindings = [
         ItemRepositoryInterface::class => ItemRepository::class,
