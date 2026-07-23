@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Buyers\BuyerRegistryInterface;
 use App\Exceptions\DuplicatePurchaseException;
 use App\Exceptions\ItemNotFoundException;
 use App\Exceptions\SoldOutException;
@@ -36,6 +37,35 @@ class PurchaseServiceTest extends TestCase
         $this->assertSame(4, $item->fresh()->available_stock);
         $this->assertSame(4, $item->fresh()->total_stock);
         $this->assertDatabaseCount('orders', 1);
+    }
+
+    public function test_successful_purchase_records_the_buyer_in_the_registry(): void
+    {
+        $item = Item::factory()->withStock(5)->create();
+        $registry = $this->app->make(BuyerRegistryInterface::class);
+
+        $this->assertFalse($registry->hasPurchased($item->id, 'user_1'));
+        $this->service->purchase($item->id, 'user_1');
+        $this->assertTrue($registry->hasPurchased($item->id, 'user_1'));
+    }
+
+    public function test_fast_path_rejects_a_known_buyer_without_touching_stock(): void
+    {
+        $item = Item::factory()->withStock(5)->create();
+
+        // Pre-seed the registry: user is already known to have bought.
+        $this->app->make(BuyerRegistryInterface::class)->remember($item->id, 'user_1');
+
+        try {
+            $this->service->purchase($item->id, 'user_1');
+            $this->fail('Expected DuplicatePurchaseException from the fast path.');
+        } catch (DuplicatePurchaseException) {
+            // expected
+        }
+
+        // No order created and no stock consumed — we short-circuited before the DB write.
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertSame(5, $item->fresh()->available_stock);
     }
 
     public function test_missing_item_throws_not_found(): void

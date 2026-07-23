@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Buyers\BuyerRegistryInterface;
 use App\Exceptions\DuplicatePurchaseException;
 use App\Exceptions\ItemNotFoundException;
 use App\Exceptions\SoldOutException;
@@ -32,6 +33,7 @@ final class PurchaseService
     public function __construct(
         private readonly ItemRepositoryInterface $items,
         private readonly OrderRepositoryInterface $orders,
+        private readonly BuyerRegistryInterface $buyers,
         private readonly DatabaseManager $db,
     ) {}
 
@@ -44,17 +46,23 @@ final class PurchaseService
      */
     public function purchase(int $itemId, string $userId): Order
     {
+        // Fast path: a known repeat buyer is rejected in-memory, before any
+        // which stays authoritative via findByItemAndUser + the UNIQUE guard.
+        if ($this->buyers->hasPurchased($itemId, $userId)) {
+            throw new DuplicatePurchaseException($itemId, $userId);
+        }
+
         if ($this->items->findById($itemId) === null) {
             throw new ItemNotFoundException($itemId);
         }
 
-        // This is an optimisation only — the DB UNIQUE constraint below is the
-        // real guard for two simultaneous requests from the same user.
+        // DB fallback duplicate check (covers a cold/unavailable registry).
         if ($this->orders->findByItemAndUser($itemId, $userId) !== null) {
+            $this->buyers->remember($itemId, $userId); // backfill the fast path
             throw new DuplicatePurchaseException($itemId, $userId);
         }
 
-        return $this->db->transaction(function () use ($itemId, $userId): Order {
+        $order = $this->db->transaction(function () use ($itemId, $userId): Order {
             // Atomic, row-locked claim. 0 affected rows => nothing left to sell.
             if ($this->items->decrementAvailableStock($itemId) === 0) {
                 throw new SoldOutException($itemId);
@@ -73,6 +81,11 @@ final class PurchaseService
                 throw $e;
             }
         }, self::MAX_TRANSACTION_ATTEMPTS);
+
+        // Record the buyer so subsequent attempts short-circuit before MySQL.
+        $this->buyers->remember($itemId, $userId);
+
+        return $order;
     }
 
     private function isUniqueViolation(QueryException $e): bool

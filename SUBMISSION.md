@@ -70,6 +70,16 @@ needs no extra infrastructure, survives app restarts (truth lives in the DB), an
 synchronous request/response contract the harness expects — KISS, with correctness guaranteed
 by the schema.
 
+**Implemented Redis optimisation — duplicate-buyer fast path.** A repeat buyer is
+rejected *before any MySQL round-trip* via a Redis set per item
+(`SISMEMBER buyers:item:{id} {userId}`; `app/Buyers/RedisBuyerRegistry.php`). It is
+**advisory only** and fails open: if Redis is unavailable or the entry is cold, the request
+falls through to the DB `findByItemAndUser` check and the authoritative
+`UNIQUE(item_id, user_id)` constraint — so a miss is always safe. This deflects
+repeat-clickers off the database during a hot sale without ever becoming a second source of
+truth. (Under tests an in-memory `ArrayBuyerRegistry` stands in, so correctness needs no live
+Redis.)
+
 **One deliberate product decision:** a repeat purchase by the same user returns **`409`**
 (clear "double purchase prevented") rather than an idempotent `200`. Without an idempotency
 key you cannot distinguish a *retry of a call that already succeeded* from a *deliberate second

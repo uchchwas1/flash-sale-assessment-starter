@@ -7,6 +7,9 @@ hard guarantee that stock is **never oversold** and **no user buys twice**.
 - **Layering:** `Controller → FormRequest → Service → Repository → Model → DB`
 - **Concurrency:** atomic conditional `UPDATE … WHERE available_stock > 0` (InnoDB row lock)
   + `UNIQUE(item_id, user_id)` + one transaction with deadlock-retry.
+- **Redis (optional):** a duplicate-buyer fast path (`SISMEMBER buyers:item:{id} {userId}`)
+  rejects repeat buyers before touching MySQL. Advisory only — **degrades gracefully**: if
+  Redis is down, the DB remains the authoritative guard, so the app runs fine without it.
 
 See **[SUBMISSION.md](SUBMISSION.md)** for the concurrency strategy, trade-offs, and
 production-readiness write-up.
@@ -33,6 +36,10 @@ All responses use one envelope:
 - **PHP 8.3** with `pdo_mysql`, `mbstring`, `pcntl` (the concurrency test forks processes)
 - **Composer**
 - **MySQL 8+**
+- **Redis (optional)** — for the duplicate-buyer fast path. The app uses the `predis`
+  client (pure PHP, no extension needed) and **works without Redis running** (fast path is
+  skipped, DB stays authoritative). To enable it: install Redis (`brew install redis` then
+  `redis-server --daemonize yes`) and keep `REDIS_CLIENT=predis` in `.env`.
 
 > On the author's machine PHP 8.3 is invoked as **`php83`** . Use
 > whichever binary is PHP 8.3 on yours. MySQL is a host (MAMP) instance on port **8889**,
@@ -100,8 +107,8 @@ to prove no oversell under genuine parallelism (requires the `pcntl` extension).
 
 ### Provided load test (`test_concurrency.py`)
 ```bash
-# 1. Reset to a clean 10-stock state
-php artisan migrate:fresh --seed
+# 1. Reset to a clean 10-stock state (clears DB *and* Redis)
+php artisan flash-sale:reset
 
 # 2. Serve WITH real parallel workers — see the note below
 PHP_CLI_SERVER_WORKERS=10 php artisan serve --port=8000 --no-reload
@@ -124,7 +131,28 @@ Expected: **10 successful / 40 rejected**, and the database shows `available_sto
 
 Each successful run leaves the item sold out. Reset the canonical state with:
 ```bash
-php artisan migrate:fresh --seed
+php artisan flash-sale:reset
+```
+This refreshes + reseeds the DB **and** clears the Redis buyer registry, keeping the two
+stores consistent.
+
+> ⚠️ Do **not** reset with a bare `php artisan migrate:fresh --seed` when Redis is enabled:
+> it wipes the DB but leaves the Redis buyer set populated from the previous run, so a
+> re-seeded (available) item will still return `409 "already purchased"` for those users.
+> Use `flash-sale:reset`, or clear only the cache with the command below.
+
+### Clear the Redis cache only
+
+If you reset the DB separately (or the fast path is wrongly returning
+`409 "already purchased"` for an available item), clear the buyer registry without touching
+the database:
+```bash
+php artisan flash-sale:clear-buyers
+```
+Equivalent raw Redis command (note Laravel's key prefix `flashsale-database-`):
+```bash
+redis-cli DEL flashsale-database-buyers:item:1     # one item
+redis-cli --scan --pattern 'flashsale-database-buyers:item:*' | xargs redis-cli DEL  # all items
 ```
 
 ---
