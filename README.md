@@ -43,10 +43,6 @@ All responses use one envelope:
   skipped, DB stays authoritative). To enable it: install Redis (`brew install redis` then
   `redis-server --daemonize yes`) and keep `REDIS_CLIENT=predis` in `.env`.
 
-> On the author's machine PHP 8.3 is invoked as **`php83`** . Use
-> whichever binary is PHP 8.3 on yours. MySQL is a host (MAMP) instance on port **8889**,
-> user `root` / password `root`. Adjust `.env` to match your setup.
-
 ---
 
 ## Setup
@@ -159,10 +155,6 @@ python3 test_concurrency.py
 Expected: **10 successful / 40 rejected**, and the database shows `available_stock = 0` with
 `10` orders.
 
-> ⚠️ **Real parallelism matters.** `PHP_CLI_SERVER_WORKERS` is only honored with
-> **`--no-reload`**. A plain `artisan serve` runs a *single* worker that serialises requests,
-> which would make the concurrency test pass even against broken code. Always use the flags
-> above (or nginx + PHP-FPM / Laravel Octane) when load-testing.
 
 ---
 
@@ -175,10 +167,6 @@ php artisan flash-sale:reset
 This refreshes + reseeds the DB **and** clears the Redis buyer registry, keeping the two
 stores consistent.
 
-> ⚠️ Do **not** reset with a bare `php artisan migrate:fresh --seed` when Redis is enabled:
-> it wipes the DB but leaves the Redis buyer set populated from the previous run, so a
-> re-seeded (available) item will still return `409 "already purchased"` for those users.
-> Use `flash-sale:reset`, or clear only the cache with the command below.
 
 ### Clear the Redis cache only
 
