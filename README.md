@@ -43,10 +43,6 @@ All responses use one envelope:
   skipped, DB stays authoritative). To enable it: install Redis (`brew install redis` then
   `redis-server --daemonize yes`) and keep `REDIS_CLIENT=predis` in `.env`.
 
-> On the author's machine PHP 8.3 is invoked as **`php83`** . Use
-> whichever binary is PHP 8.3 on yours. MySQL is a host (MAMP) instance on port **8889**,
-> user `root` / password `root`. Adjust `.env` to match your setup.
-
 ---
 
 ## Setup
