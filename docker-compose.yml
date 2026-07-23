@@ -1,19 +1,47 @@
-# Portable environment for reviewers who have Docker.
-# NOTE: On the author's machine the app runs against a host MySQL (MAMP) on
-# port 8889 (root/root). This compose file is the reproducible alternative:
-# bring it up and point .env at DB_PORT=3306 / DB_USERNAME=dev_user / DB_PASSWORD=dev_password.
+
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flash_sale_app
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "false"
+      APP_URL: http://localhost:8000
+      # Talk to the sibling containers by service name.
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_DATABASE: flash_sale
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      REDIS_CLIENT: predis
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      CACHE_STORE: file
+      SESSION_DRIVER: file
+      QUEUE_CONNECTION: sync
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
   mysql:
-    image: mysql:8
+    
+    image: mysql:8.4
     container_name: flash_sale_db
-    command: --default-authentication-plugin=caching_sha2_password
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: flash_sale
       MYSQL_USER: dev_user
       MYSQL_PASSWORD: dev_password
+    
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -25,8 +53,10 @@ services:
   redis:
     image: redis:7-alpine
     container_name: flash_sale_redis
+    # Host-published on 6380 to avoid clashing with a host Redis on 6379.
+    # The app still reaches it internally at redis:6379 (unchanged).
     ports:
-      - "6379:6379"
+      - "6380:6379"
 
 volumes:
   mysql_data:

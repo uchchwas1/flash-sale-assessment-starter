@@ -66,10 +66,47 @@ php artisan key:generate
 php artisan migrate:fresh --seed
 ```
 
-### Docker alternative
-A `docker-compose.yml` is provided (MySQL 8 + Redis) for reviewers who prefer containers. It
-exposes MySQL on **3306** with `dev_user` / `dev_password`; set `DB_PORT=3306` and those
-credentials in `.env`, then `docker compose up -d` and run the migrate step above.
+### Run entirely in Docker (no PHP/MySQL/Redis needed on the host)
+
+The stack is fully containerized — app + MySQL 8 + Redis:
+
+```bash
+docker compose up --build
+```
+
+That's it. The `app` container installs dependencies, waits for MySQL, runs
+`migrate:fresh --seed` (item 1, stock 10), and serves on **http://localhost:8000** with real
+parallel workers. It talks to MySQL/Redis over the compose network (hosts `mysql` / `redis`),
+so no host `.env` changes are required.
+
+> **Host port note:** to avoid clashing with a MySQL/Redis you may already run on the host,
+> the containers publish MySQL on **3307** and Redis on **6380** (internally they stay
+> 3306/6379, which is all the app uses). Only `:8000` must be free on the host. If you see
+> `bind: address already in use`, something else holds that port — free it or change the
+> mapping in `docker-compose.yml`.
+
+Verify:
+```bash
+curl http://localhost:8000/items/1
+curl -X POST http://localhost:8000/items/1/buy \
+     -H 'Content-Type: application/json' -d '{"user_id":"user_1"}'
+```
+
+Run the load test from the host against the container:
+```bash
+python3 test_concurrency.py            # expects 10 successful / 40 rejected
+```
+
+Useful container commands:
+```bash
+docker compose exec app php artisan flash-sale:reset          # reset DB + Redis
+docker compose exec app php artisan flash-sale:clear-buyers   # clear Redis cache only
+docker compose exec app php artisan test                      # run the suite (needs a test DB)
+docker compose down -v                                        # stop and wipe data
+```
+
+> The suite uses a separate `flash_sale_test` database. To run it in Docker, create that DB
+> once: `docker compose exec mysql mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS flash_sale_test"`.
 
 ---
 
