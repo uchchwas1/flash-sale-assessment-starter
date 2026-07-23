@@ -18,7 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
         api: __DIR__.'/../routes/api.php',
-        apiPrefix: '', 
+        apiPrefix: '',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
@@ -30,7 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
             fn (FlashSaleException $e) => ApiResponse::error($e->errorMessage(), [], $e->httpStatus())
         );
 
-        // Validation 
+        // Validation
         $exceptions->render(function (ValidationException $e, Request $request) {
             if ($request->expectsJson()) {
                 return ApiResponse::error('Validation failed.', $e->errors(), Response::HTTP_UNPROCESSABLE_ENTITY);

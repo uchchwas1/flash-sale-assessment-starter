@@ -35,7 +35,7 @@ final class ItemController extends Controller
     }
 
     /**
-     * POST /items/{id}/buy 
+     * POST /items/{id}/buy
      * All failure modes (not found, sold out, duplicate) are raised as domain
      */
     public function buy(BuyItemRequest $request, int $id): JsonResponse

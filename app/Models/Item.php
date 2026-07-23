@@ -12,10 +12,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * A sellable flash-sale item.
  *
- * @property int    $id
+ * @property int $id
  * @property string $title
- * @property int    $total_stock
- * @property int    $available_stock
+ * @property int $total_stock
+ * @property int $available_stock
  */
 class Item extends Model
 {

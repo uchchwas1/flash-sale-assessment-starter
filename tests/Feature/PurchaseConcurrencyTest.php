@@ -29,6 +29,7 @@ use Tests\TestCase;
 class PurchaseConcurrencyTest extends TestCase
 {
     private const int STOCK = 10;
+
     private const int TOTAL_USERS = 50;
 
     protected function setUp(): void

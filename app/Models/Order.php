@@ -12,8 +12,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * An append-only record of one successful purchase.
  *
- * @property int    $id
- * @property int    $item_id
+ * @property int $id
+ * @property int $item_id
  * @property string $user_id
  */
 class Order extends Model

@@ -38,9 +38,9 @@ final class PurchaseService
     /**
      * Claim one unit of an item for a user.
      *
-     * @throws ItemNotFoundException       item id does not exist
-     * @throws SoldOutException            no stock remains
-     * @throws DuplicatePurchaseException  the user already owns this item
+     * @throws ItemNotFoundException item id does not exist
+     * @throws SoldOutException no stock remains
+     * @throws DuplicatePurchaseException the user already owns this item
      */
     public function purchase(int $itemId, string $userId): Order
     {

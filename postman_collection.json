@@ -1,0 +1,133 @@
+{
+  "info": {
+    "name": "Flash Sale API",
+    "description": "High-concurrency flash-sale service. Base URL defaults to http://localhost:8000.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000" },
+    { "key": "itemId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Get item stock status",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/items/{{itemId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["items", "{{itemId}}"]
+        },
+        "description": "Returns total_stock, available_stock, sold count and is_sold_out. 404 if the item does not exist."
+      },
+      "response": [
+        {
+          "name": "200 OK",
+          "originalRequest": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/items/1" }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": true,\n  \"message\": \"Item retrieved.\",\n  \"data\": {\n    \"id\": 1,\n    \"title\": \"Limited Edition Tech Hoodie\",\n    \"total_stock\": 10,\n    \"available_stock\": 10,\n    \"sold\": 0,\n    \"is_sold_out\": false\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Buy item (success)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user_id\": \"user_1\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/items/{{itemId}}/buy",
+          "host": ["{{baseUrl}}"],
+          "path": ["items", "{{itemId}}", "buy"]
+        },
+        "description": "Atomically claims one unit for the given user_id. Returns 201 with the order and remaining stock."
+      },
+      "response": [
+        {
+          "name": "201 Created",
+          "originalRequest": {
+            "method": "POST",
+            "body": { "mode": "raw", "raw": "{ \"user_id\": \"user_1\" }" },
+            "url": { "raw": "{{baseUrl}}/items/1/buy" }
+          },
+          "status": "Created",
+          "code": 201,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": true,\n  \"message\": \"Purchase successful.\",\n  \"data\": {\n    \"order_id\": 1,\n    \"item_id\": 1,\n    \"user_id\": \"user_1\",\n    \"remaining_stock\": 9\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Buy item (duplicate → 409)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user_id\": \"user_1\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/items/{{itemId}}/buy",
+          "host": ["{{baseUrl}}"],
+          "path": ["items", "{{itemId}}", "buy"]
+        },
+        "description": "Sending the same user_id a second time is rejected by the UNIQUE(item_id, user_id) guard."
+      },
+      "response": [
+        {
+          "name": "409 Conflict",
+          "originalRequest": { "method": "POST", "url": { "raw": "{{baseUrl}}/items/1/buy" } },
+          "status": "Conflict",
+          "code": 409,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": false,\n  \"message\": \"User has already purchased this item.\",\n  \"errors\": {}\n}"
+        }
+      ]
+    },
+    {
+      "name": "Buy item (validation error → 422)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/items/{{itemId}}/buy",
+          "host": ["{{baseUrl}}"],
+          "path": ["items", "{{itemId}}", "buy"]
+        },
+        "description": "Missing/blank user_id fails validation."
+      },
+      "response": [
+        {
+          "name": "422 Unprocessable",
+          "originalRequest": { "method": "POST", "url": { "raw": "{{baseUrl}}/items/1/buy" } },
+          "status": "Unprocessable Content",
+          "code": 422,
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": "{\n  \"success\": false,\n  \"message\": \"Validation failed.\",\n  \"errors\": {\n    \"user_id\": [\"The user id field is required.\"]\n  }\n}"
+        }
+      ]
+    }
+  ]
+}

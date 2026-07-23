@@ -19,7 +19,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-
         DB::statement('ALTER TABLE items ADD CONSTRAINT chk_available_non_negative CHECK (available_stock >= 0)');
         DB::statement('ALTER TABLE items ADD CONSTRAINT chk_available_lte_total CHECK (available_stock <= total_stock)');
     }
