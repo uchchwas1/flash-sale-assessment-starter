@@ -11,6 +11,8 @@ hard guarantee that stock is **never oversold** and **no user buys twice**.
   rejects repeat buyers before touching MySQL. Advisory only — **degrades gracefully**: if
   Redis is down, the DB remains the authoritative guard, so the app runs fine without it.
 
+🎥 **Video walkthrough:** [Project brief & live output demo](https://drive.google.com/file/d/1tVm_BtI0p-Z1BMM44iM3F9Kg3otynR3J/view?usp=sharing)
+
 See **[SUBMISSION.md](SUBMISSION.md)** for the concurrency strategy, trade-offs, and
 production-readiness write-up.
 
