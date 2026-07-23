@@ -5,6 +5,8 @@ A high-concurrency flash-sale service built in **Laravel 13 / PHP 8.3 / MySQL 8*
 available stock under a burst of concurrent buyers, never oversells, and never lets a
 single user buy twice.
 
+🎥 **Video walkthrough:** [Project brief & live output demo](https://drive.google.com/file/d/1tVm_BtI0p-Z1BMM44iM3F9Kg3otynR3J/view?usp=sharing)
+
 **Verified:** the provided `test_concurrency.py` (50 concurrent requests, 10 stock) yields
 exactly **10 successful / 40 rejected**, with `available_stock = 0` and `orders = 10`; a
 committed `pcntl_fork` test (`tests/Feature/PurchaseConcurrencyTest.php`) proves the same
