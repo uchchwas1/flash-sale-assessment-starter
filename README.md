@@ -197,7 +197,7 @@ app/
   Repositories/OrderRepository.php         # order insert + lookup
   Exceptions/                              # SoldOut / DuplicatePurchase / ItemNotFound
   Support/ApiResponse.php                  # the JSON envelope
-database/migrations/                       # items + orders (CHECKs, UNIQUE, utf8mb4_bin)
+database/migrations/                       # items + orders (CHECKs, UNIQUE)
 database/seeders/ItemSeeder.php            # item id=1, stock 10
 routes/api.php                             # /items/{id}, /items/{id}/buy (root prefix)
 tests/Feature/                             # repository, service, API, concurrency tests
