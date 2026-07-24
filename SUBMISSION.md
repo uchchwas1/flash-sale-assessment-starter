@@ -27,6 +27,32 @@ InnoDB row-locks this single statement and serializes concurrent writers; the `W
 makes over-decrement impossible. Affected-rows is the verdict: `1` = unit claimed, `0` =
 sold out.
 
+**The last-unit race, step by step** — two users hit `/buy` in the same millisecond with
+one unit left:
+
+```
+                     available_stock = 1
+        ┌─────────────────────┴─────────────────────┐
+   User A's UPDATE                              User B's UPDATE
+   acquires row lock                            BLOCKS — waits for lock
+        │                                             │
+   WHERE available_stock > 0  ✓ (1 > 0)               │ (still waiting)
+   stock: 1 → 0                                       │
+   affected rows = 1  → A WON                         │
+   INSERT order (A)  ✓                                │
+   COMMIT → releases lock                             │
+        │                                             ▼
+        │                              lock acquired, UPDATE runs now
+        │                              WHERE available_stock > 0  ✗ (0 > 0 is false)
+        │                              affected rows = 0  → B LOST
+        │                              throw SoldOutException → 409
+        ▼                                             ▼
+   201 Created, remaining_stock: 0            409 "Item is sold out"
+```
+
+There is no gap between "check stock" and "decrement" for a race to slip through — they are
+the same locked statement, so exactly one buyer can ever win the last unit.
+
 **b) `UNIQUE(item_id, user_id)`** on `orders` — the double-purchase guard. Two simultaneous
 requests from the same user: one `INSERT` wins, the other violates the constraint → `409`.
 
